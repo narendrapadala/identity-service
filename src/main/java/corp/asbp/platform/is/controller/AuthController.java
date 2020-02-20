@@ -10,8 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import corp.asbp.platform.is.enumerations.AuthProvider;
+import corp.asbp.platform.is.enumerations.CommonStatus;
 import corp.asbp.platform.is.exception.BadRequestException;
-import corp.asbp.platform.is.model.AuthProvider;
 import corp.asbp.platform.is.model.User;
 import corp.asbp.platform.is.payload.ApiResponse;
 import corp.asbp.platform.is.payload.AuthResponse;
@@ -19,6 +20,7 @@ import corp.asbp.platform.is.payload.LoginRequest;
 import corp.asbp.platform.is.payload.SignUpRequest;
 import corp.asbp.platform.is.repository.UserRepository;
 import corp.asbp.platform.is.security.TokenProvider;
+import corp.asbp.platform.is.util.CustomUtil;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -67,7 +69,12 @@ public class AuthController {
         user.setEmail(signUpRequest.getEmail());
         user.setPassword(signUpRequest.getPassword());
         user.setProvider(AuthProvider.local);
-
+        user.setStatus(CommonStatus.ENABLED);
+        user.setCreatedAt(CustomUtil.currentTimeStamp());
+        user.setModifiedAt(CustomUtil.currentTimeStamp());
+        user.setCreatedBy(1L);
+        user.setModifiedBy(1L);
+        
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         User result = userRepository.save(user);

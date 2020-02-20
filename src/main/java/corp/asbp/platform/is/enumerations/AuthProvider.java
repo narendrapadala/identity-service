@@ -1,4 +1,4 @@
-package corp.asbp.platform.is.model;
+package corp.asbp.platform.is.enumerations;
 
 public enum  AuthProvider {
     local,

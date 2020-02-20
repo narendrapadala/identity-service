@@ -10,13 +10,15 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import corp.asbp.platform.is.enumerations.AuthProvider;
+import corp.asbp.platform.is.enumerations.CommonStatus;
 import corp.asbp.platform.is.exception.OAuth2AuthenticationProcessingException;
-import corp.asbp.platform.is.model.AuthProvider;
 import corp.asbp.platform.is.model.User;
 import corp.asbp.platform.is.repository.UserRepository;
 import corp.asbp.platform.is.security.UserPrincipal;
 import corp.asbp.platform.is.security.oauth2.user.OAuth2UserInfo;
 import corp.asbp.platform.is.security.oauth2.user.OAuth2UserInfoFactory;
+import corp.asbp.platform.is.util.CustomUtil;
 
 import java.util.Optional;
 
@@ -71,12 +73,24 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         user.setName(oAuth2UserInfo.getName());
         user.setEmail(oAuth2UserInfo.getEmail());
         user.setImageUrl(oAuth2UserInfo.getImageUrl());
+        user.setStatus(CommonStatus.ENABLED);
+        user.setCreatedAt(CustomUtil.currentTimeStamp());
+        user.setModifiedAt(CustomUtil.currentTimeStamp());
+        user.setCreatedBy(1L);
+        user.setModifiedBy(1L);
         return userRepository.save(user);
     }
 
     private User updateExistingUser(User existingUser, OAuth2UserInfo oAuth2UserInfo) {
         existingUser.setName(oAuth2UserInfo.getName());
         existingUser.setImageUrl(oAuth2UserInfo.getImageUrl());
+        
+        existingUser.setStatus(CommonStatus.ENABLED);
+        existingUser.setCreatedAt(CustomUtil.currentTimeStamp());
+        existingUser.setModifiedAt(CustomUtil.currentTimeStamp());
+        existingUser.setCreatedBy(1L);
+        existingUser.setModifiedBy(1L);
+        
         return userRepository.save(existingUser);
     }
 

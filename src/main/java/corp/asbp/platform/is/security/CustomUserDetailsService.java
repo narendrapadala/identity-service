@@ -12,10 +12,6 @@ import corp.asbp.platform.is.exception.OAuthResourceNotFoundException;
 import corp.asbp.platform.is.model.User;
 import corp.asbp.platform.is.repository.UserRepository;
 
-/**
- * Created by rajeevkumarsingh on 02/08/17.
- */
-
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 

@@ -2,8 +2,8 @@ package corp.asbp.platform.is.security.oauth2.user;
 
 import java.util.Map;
 
+import corp.asbp.platform.is.enumerations.AuthProvider;
 import corp.asbp.platform.is.exception.OAuth2AuthenticationProcessingException;
-import corp.asbp.platform.is.model.AuthProvider;
 
 public class OAuth2UserInfoFactory {
 
