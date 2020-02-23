@@ -150,8 +150,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	}
     
 	private ClientRegistration googleClientRegistration(String vendor) {
+		
+		//return
 		return ClientRegistration.withRegistrationId(vendor)
-                                .clientId("5014057553-8gm9um6vnli3cle5rgigcdjpdrid14m9.apps.googleusercontent.com")
+                .clientId("5014057553-8gm9um6vnli3cle5rgigcdjpdrid14m9.apps.googleusercontent.com")
 				.clientSecret("tWZKVLxaD_ARWsriiiUFYoIk")
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.redirectUriTemplate("{baseUrl}/oauth2/callback/{registrationId}")
@@ -160,7 +162,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.tokenUri("https://www.googleapis.com/oauth2/v4/token")
 				.userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
 				.userNameAttributeName(IdTokenClaimNames.SUB)
-                                .jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
+                .jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
 				.clientName("Google").build();
 	}
 }

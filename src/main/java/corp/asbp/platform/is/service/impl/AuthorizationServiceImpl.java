@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import corp.asbp.platform.is.dto.SsHeader;
 import corp.asbp.platform.is.dto.UserResponseDto;
+import corp.asbp.platform.is.dto.UsersProfileDto;
 import corp.asbp.platform.is.exception.AccessForbiddenException;
 import corp.asbp.platform.is.exception.ClientVersionUpgradeException;
 import corp.asbp.platform.is.exception.ResourceNotFoundException;
@@ -32,6 +33,7 @@ import corp.asbp.platform.is.repository.ApiRepository;
 import corp.asbp.platform.is.repository.ModuleConfigMappingRepository;
 import corp.asbp.platform.is.repository.UserRoleMappingRepository;
 import corp.asbp.platform.is.service.AuthorizationService;
+import corp.asbp.platform.is.util.CustomUtil;
 
 
 
@@ -60,7 +62,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 	private ObjectMapper mapper = new ObjectMapper();
 
 	@Override
-	public UserResponseDto validateUser(SsHeader ssHeader, String uri, HttpMethod reqMethod)
+	public UsersProfileDto validateUser(SsHeader ssHeader, String uri, HttpMethod reqMethod)
 			throws AccessForbiddenException, UnAuthorizedException, ResourceNotFoundException, IOException,
 			ClientVersionUpgradeException {
 
@@ -70,30 +72,36 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
 		System.out.println(ssHeader);
 		System.out.println(uri);
-		UserResponseDto user = getUserFromSession(ssHeader.getSessionId());
+		
+		UsersProfileDto user = getUserFromSession(ssHeader.getSessionId());
 
-		Boolean b = getApiAccessRole(user, uri, reqMethod);
+		UserResponseDto usr = new UserResponseDto();
+		
+		usr.setEmail(user.getUser().getEmail());
+		usr.setId(user.getUser().getId());
+		usr.setSessionId(ssHeader.getSessionId());
+		
+		Boolean b = getApiAccessRole(usr, uri, reqMethod);
 		// return
 		return user;
 	}
 
 	@Override
-	public UserResponseDto getUserFromSession(String sessionId) throws UnAuthorizedException, IOException {
+	public UsersProfileDto getUserFromSession(String sessionId) throws UnAuthorizedException, IOException {
 
-		UserResponseDto user = new UserResponseDto();
-		return null;
-		/*
-		if (StringUtils.isNotEmpty(sessionId)) {
+		UsersProfileDto user = new UsersProfileDto();
+
+		if (!CustomUtil.isEmptyString(sessionId)) {
 			LOGGER.info("Get user object via session from redis...");
 			String s = redisTemplate.opsForValue().get(sessionId);
 
 			if (s != null) {
-				user = mapper.readValue(s, UserResponseDto.class);
+				user = mapper.readValue(s, UsersProfileDto.class);
 			} else {
 				throw new UnAuthorizedException("Invalid session. Please relogin.");
 			}
 		}
-		return user; */
+		return user; 
 	}
 
 	private Boolean getApiAccessRole(UserResponseDto userResponseDto, String requestUri, HttpMethod reqMethod)

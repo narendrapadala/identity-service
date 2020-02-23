@@ -14,15 +14,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import corp.asbp.platform.is.dto.AddUserRoleDto;
+import corp.asbp.platform.is.dto.DecriptionUserResponseDto;
 import corp.asbp.platform.is.dto.LoginDto;
 import corp.asbp.platform.is.dto.UserResponseDto;
 import corp.asbp.platform.is.dto.UsersProfileDto;
+import corp.asbp.platform.is.enumerations.AuthProvider;
+import corp.asbp.platform.is.enumerations.CommonStatus;
 import corp.asbp.platform.is.exception.ASBPException;
 import corp.asbp.platform.is.model.ModuleConfigMapping;
 import corp.asbp.platform.is.model.Role;
@@ -32,12 +36,11 @@ import corp.asbp.platform.is.repository.ModuleConfigMappingRepository;
 import corp.asbp.platform.is.repository.RoleRepository;
 import corp.asbp.platform.is.repository.UserRepository;
 import corp.asbp.platform.is.repository.UserRoleMappingRepository;
+import corp.asbp.platform.is.security.TokenProvider;
 import corp.asbp.platform.is.service.RolesService;
 import corp.asbp.platform.is.service.UserService;
+import corp.asbp.platform.is.util.CustomUtil;
 import corp.asbp.platform.is.util.EnvironmentProperties;
-
-
-
 
 /**
  * @author Narendra
@@ -49,10 +52,10 @@ import corp.asbp.platform.is.util.EnvironmentProperties;
 public class UserServiceImpl implements UserService {
 
 	private static Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
-	
+
 	@Autowired
 	private EnvironmentProperties properties;
-	
+
 	@Autowired
 	private RedisTemplate<String, String> redisTemplate;
 
@@ -73,6 +76,14 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	ModuleConfigMappingRepository moduleConfigMappingRepo;
+	
+	
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private TokenProvider tokenProvider;
+    
 
 	@Override
 	public void deleteUser(Long userId) {
@@ -151,9 +162,9 @@ public class UserServiceImpl implements UserService {
 
 		UsersProfileDto userProfile = new UsersProfileDto();
 		UsersProfileDto.User usr = new UsersProfileDto.User();
-		User user =getUser(userId);
-		//check
-		if(user!=null) {
+		User user = getUser(userId);
+		// check
+		if (user != null) {
 			usr.setId(user.getId());
 			usr.setUserGroupId(user.getUserGroupId());
 			usr.setParentUserId(user.getParentUserId());
@@ -169,48 +180,45 @@ public class UserServiceImpl implements UserService {
 			usr.setPhoneNo(user.getPhoneNo());
 			usr.setCustomerCompanyName(user.getCustomerCompanyName());
 			usr.setCreditLimit(user.getCreditLimit());
-			
+
 			userProfile.setUser(usr);
 		}
 
-		
 		List<String> roles = new ArrayList<String>();
 		List<String> modules = new ArrayList<String>();
 		List<String> features = new ArrayList<String>();
-		
+
 		List<ModuleConfigMapping> moduleConfigMappings = getUserRoles(userId);
-		
-		//check
-		if(moduleConfigMappings !=null )  {
-			//loop
-			for(ModuleConfigMapping mconf : moduleConfigMappings) {
-				//check
-				if(!roles.contains(mconf.getRole().getName())) {
+
+		// check
+		if (moduleConfigMappings != null) {
+			// loop
+			for (ModuleConfigMapping mconf : moduleConfigMappings) {
+				// check
+				if (!roles.contains(mconf.getRole().getName())) {
 					roles.add(mconf.getRole().getName());
 				}
-				//check
-				if(!roles.contains(mconf.getRole().getName())) {
+				// check
+				if (!roles.contains(mconf.getRole().getName())) {
 					roles.add(mconf.getRole().getName());
 				}
-				//check
-				if(!features.contains(mconf.getModuleFeature().getName())) {
+				// check
+				if (!features.contains(mconf.getModuleFeature().getName())) {
 					features.add(mconf.getModuleFeature().getName());
 				}
-				//check
-				if(!modules.contains(mconf.getModule().getName())) {
+				// check
+				if (!modules.contains(mconf.getModule().getName())) {
 					modules.add(mconf.getModule().getName());
 				}
 			}
-			
-		}
-		
 
-		userProfile.setRoles(roles);		
+		}
+
+		userProfile.setRoles(roles);
 		userProfile.setModules(modules);
 		userProfile.setFeatures(features);
-		
+
 		return userProfile;
-		
 
 	}
 
@@ -264,22 +272,21 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserResponseDto login(LoginDto login) {
-		
+
 		User usr = userRepo.findByEmailAndPassword(login.getEmail(), login.getPassword());
 		System.out.println(usr.toString());
 		if (!usr.equals(null)) {
 			String session = UUID.randomUUID().toString();
-			UserResponseDto res= new UserResponseDto();
+			UserResponseDto res = new UserResponseDto();
 			res.setEmail(usr.getEmail());
 			res.setId(usr.getId());
 			res.setSessionId(session);
-			
+
 			try {
 				redisTemplate.opsForValue().set(session, objectMapper.writeValueAsString(res));
 				if (properties.getSessionTimeout() > 0)
-					redisTemplate.expire(session, properties.getSessionTimeout(),
-							TimeUnit.SECONDS);
-				
+					redisTemplate.expire(session, properties.getSessionTimeout(), TimeUnit.SECONDS);
+
 				return res;
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
@@ -289,20 +296,76 @@ public class UserServiceImpl implements UserService {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public String setRedisSession(Long userId) {
+		
+		String session = UUID.randomUUID().toString();
+		
+		UsersProfileDto profile  = getProfile(userId);
+		//check
+		if (!profile.equals(null)) {
+			try {
+				redisTemplate.opsForValue().set(session, objectMapper.writeValueAsString(profile));
+				if (properties.getSessionTimeout() > 0)
+					redisTemplate.expire(session, properties.getSessionTimeout(), TimeUnit.SECONDS);
+				//return
+				return session;
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}
+		//return
+		return session;
+	}
 
 	@Override
 	public Boolean logout(String sessionId) {
 		/*
-		if(StringUtils.isNotEmpty(sessionId)) {
-			if (!redisTemplate.delete(sessionId)) {
-				log.error("Couldn't log  user out, sessionId: {}",sessionId);
-				return false;
-			}else{
-				return true;
-			}
-		}
-		*/
+		 * if(StringUtils.isNotEmpty(sessionId)) { if (!redisTemplate.delete(sessionId))
+		 * { log.error("Couldn't log  user out, sessionId: {}",sessionId); return false;
+		 * }else{ return true; } }
+		 */
 		return null;
 	}
 
+	@Override
+	public User registerNewUser(DecriptionUserResponseDto tokenUser,Long vendor) {
+		User user = new User();
+
+		user.setParentUserId(vendor);
+		user.setUserGroupId(3L);
+		user.setProvider(AuthProvider.token);
+		user.setProviderId(tokenUser.getUniqueId());
+		user.setName(tokenUser.getFirstName() +" " +tokenUser.getLastName());
+		user.setEmail(tokenUser.getEmail());
+		user.setFirstName(tokenUser.getFirstName());
+		user.setLastName(tokenUser.getLastName());
+		//Todo encrypt standard pass for each user
+		String tokenPass = tokenUser.getUniqueId();		
+		user.setPassword(passwordEncoder.encode(tokenPass));
+		user.setImageUrl("");
+		user.setStatus(CommonStatus.ENABLED);
+		user.setCreatedAt(CustomUtil.currentTimeStamp());
+		user.setModifiedAt(CustomUtil.currentTimeStamp());
+		user.setCreatedBy(1L);
+		user.setModifiedBy(1L);
+		return userRepo.save(user);
+	}
+
+	@Override
+	public User updateExistingUser(User existingUser, DecriptionUserResponseDto tokenUser) {		
+		existingUser.setProvider(AuthProvider.token);
+		existingUser.setUserGroupId(3L);
+		existingUser.setProviderId(tokenUser.getUniqueId());
+		existingUser.setName(tokenUser.getFirstName() +" " +tokenUser.getLastName());
+		existingUser.setEmail(tokenUser.getEmail());
+		existingUser.setFirstName(tokenUser.getFirstName());
+		existingUser.setLastName(tokenUser.getLastName());
+		existingUser.setImageUrl("");
+		existingUser.setStatus(CommonStatus.ENABLED);
+		existingUser.setModifiedAt(CustomUtil.currentTimeStamp());
+		existingUser.setModifiedBy(1L);
+		return userRepo.save(existingUser);
+	}
 }

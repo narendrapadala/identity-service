@@ -8,7 +8,7 @@ import java.io.IOException;
 import org.springframework.http.HttpMethod;
 
 import corp.asbp.platform.is.dto.SsHeader;
-import corp.asbp.platform.is.dto.UserResponseDto;
+import corp.asbp.platform.is.dto.UsersProfileDto;
 import corp.asbp.platform.is.exception.AccessForbiddenException;
 import corp.asbp.platform.is.exception.ClientVersionUpgradeException;
 import corp.asbp.platform.is.exception.ResourceNotFoundException;
@@ -21,10 +21,10 @@ import corp.asbp.platform.is.exception.UnAuthorizedException;
  */
 public interface AuthorizationService {
 	
-	public UserResponseDto validateUser(SsHeader ssHeader, String uri, HttpMethod reqMethod) throws AccessForbiddenException, UnAuthorizedException,
+	public UsersProfileDto validateUser(SsHeader ssHeader, String uri, HttpMethod reqMethod) throws AccessForbiddenException, UnAuthorizedException,
 																ResourceNotFoundException, IOException, ClientVersionUpgradeException;
 
 	
-	public UserResponseDto getUserFromSession(String sessionId) throws UnAuthorizedException, IOException;
+	public UsersProfileDto getUserFromSession(String sessionId) throws UnAuthorizedException, IOException;
 
 }

@@ -10,4 +10,5 @@ import lombok.Data;
 public class ProcessDecryptionDto {
 	private Long vendor;
 	private String ecryptionStr;
+	private String redirectUri;
 }

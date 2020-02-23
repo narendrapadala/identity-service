@@ -28,6 +28,7 @@ import corp.asbp.platform.is.exception.ASBPException;
 import corp.asbp.platform.is.model.UserMeta;
 import corp.asbp.platform.is.repository.UserMetaRepository;
 import corp.asbp.platform.is.service.DecryptionApiSettingsService;
+import corp.asbp.platform.is.service.OAuth2ClientRegistration;
 import corp.asbp.platform.is.util.Constants;
 
 
@@ -40,6 +41,9 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 	@Autowired
 	UserMetaRepository userMetaRepo;
 	
+	@Autowired
+	OAuth2ClientRegistration oAuth2ClientRegistration;
+	
 	@Override
 	public List<UserMeta> addAndUpdateDecryptionApiSettings(List<UserMeta> userMeta) {
 		
@@ -47,8 +51,10 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 		if (userMeta != null && userMeta.size() > 0) {
 			
 			for(UserMeta uMeta : userMeta ) {
-			userMetaRepo.save(uMeta);
+				userMetaRepo.save(uMeta);
 			}
+			//update oauth2 bean settings
+			oAuth2ClientRegistration.updateOAuth2ClientRegistrations();
 		}
 		//return
 		return userMeta;
@@ -102,13 +108,18 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 				LOG.info("Encryption api key : " + apiKey);
 				LOG.info("Encryption text : " + decryption.getEcryptionStr());
 				LOG.info("apiResponseMpping : " + apiResponseFormat);
-				/*
+			
 				try {
 					OkHttpClient client = new OkHttpClient();
 
+					
+					//set here empty when live/ test use case came url 
+					String extra = "&mode=cbc&alg=arcfour";
+					//Todo if need i.e change request header format
 					MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
 					RequestBody body = RequestBody.create(mediaType, "text=" + decryption.getEcryptionStr() + "&key="
-							+ apiKey + "&mode=cbc&alg=arcfour");
+							+ apiKey + extra);
+					
 					Request request = new Request.Builder().url(apiEndpoint).method("POST", body)
 							.addHeader("Content-Type", "application/x-www-form-urlencoded").build();
 
@@ -118,7 +129,7 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 						String returnResponse = "";
 						returnResponse = response.body().string();
 						
-						LOG.info("Decription response : " + returnResponse);
+						LOG.info("Decription API Response : " + returnResponse);
 
 						HashMap<String, Object> resp = new HashMap<String, Object>();
 						HashMap<String, Object> maping = new HashMap<String, Object>();
@@ -126,14 +137,18 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 						ObjectMapper mapper = new ObjectMapper();
 						
 						// Convert Map to JSON
-						resp = mapper.readValue(returnResponse.replaceAll("\\\\", ""),
+						resp = (HashMap<String, Object>) mapper.readValue(returnResponse.replaceAll("\\\\", ""),
 								new TypeReference<Map<String, Object>>() {
 								});
+						
+						LOG.info("Response Mapper : " + resp.toString());
 
-						maping = mapper.readValue(apiResponseMpping.replaceAll("\\\\", ""),
+						maping = (HashMap<String, Object>) mapper.readValue(apiResponseMpping.replaceAll("\\\\", ""),
 								new TypeReference<Map<String, Object>>() {
 								});
-
+						
+						LOG.info("Mapping Mapper : " + maping.toString());
+						
 						if (maping.get("uniqueid") != null && resp.containsKey(maping.get("uniqueid"))) {
 							dr.setUniqueId((String) resp.get(maping.get("uniqueid")));
 						}
@@ -148,6 +163,7 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 						if (maping.get("email") != null && resp.containsKey(maping.get("email"))) {
 							dr.setEmail((String) resp.get(maping.get("email")));
 						}
+						
 						// return
 						return dr;
 					} catch (JsonGenerationException e) {						
@@ -168,8 +184,7 @@ public class DecryptionApiSettingsServiceImpl implements DecryptionApiSettingsSe
 					throw new ASBPException(
 							"The vendor encrytion key or endpoint id is invalid, please add a valid details", ex);
 				}
-				
-				*/
+			
 			}
 		}
 		//return

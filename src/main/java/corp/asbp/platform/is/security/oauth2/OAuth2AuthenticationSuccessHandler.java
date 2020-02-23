@@ -9,6 +9,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import corp.asbp.platform.is.config.AppProperties;
 import corp.asbp.platform.is.exception.BadRequestException;
 import corp.asbp.platform.is.security.TokenProvider;
+import corp.asbp.platform.is.security.UserPrincipal;
+import corp.asbp.platform.is.service.UserService;
 import corp.asbp.platform.is.util.CookieUtils;
 
 import javax.servlet.ServletException;
@@ -28,6 +30,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private TokenProvider tokenProvider;
 
     private AppProperties appProperties;
+    
+	@Autowired
+	private UserService userService;
 
     private HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
@@ -64,9 +69,14 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String targetUrl = redirectUri.orElse(getDefaultTargetUrl());
 
         String token = tokenProvider.createToken(authentication);
+        
+    	UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+		String session = userService.setRedisSession(userPrincipal.getId());
 
         return UriComponentsBuilder.fromUriString(targetUrl)
                 .queryParam("token", token)
+                .queryParam("session", session)
                 .build().toUriString();
     }
 
@@ -76,8 +86,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     private boolean isAuthorizedRedirectUri(String uri) {
-        URI clientRedirectUri = URI.create(uri);
+        //URI clientRedirectUri = URI.create(uri);
         return true;
+        
         /*
         return appProperties.getOauth2().getAuthorizedRedirectUris()
                 .stream()

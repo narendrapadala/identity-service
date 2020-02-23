@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import corp.asbp.platform.is.dto.AddUserRoleDto;
+import corp.asbp.platform.is.dto.DecriptionUserResponseDto;
 import corp.asbp.platform.is.dto.LoginDto;
 import corp.asbp.platform.is.dto.UserResponseDto;
 import corp.asbp.platform.is.dto.UsersProfileDto;
@@ -61,6 +62,15 @@ public interface UserService {
 
 	Boolean logout(String session);
 
+	
+	//description
+	
+	User registerNewUser(DecriptionUserResponseDto tokenUser,Long vendor);
+	
+	User updateExistingUser(User existingUser, DecriptionUserResponseDto tokenUser);
+
+	String setRedisSession(Long userId);
+	
 
 	
 

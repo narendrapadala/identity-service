@@ -16,7 +16,29 @@ public class Constants {
 	
 	public static final String VENDOR_LOGIN_TYPE ="VENDOR_LOGIN_TYPE";
 	
+	//oauth2
+	public static final String OAUTH2_CLIENT_REGISTRATION_ID ="OAUTH2_CLIENT_REGISTRATION_ID";
+
+	public static final String OAUTH2_CLIENT_NAME ="OAUTH2_CLIENT_NAME";
+
+	public static final String OAUTH2_CLIENT_ID ="OAUTH2_CLIENT_ID";
 	
+	public static final String OAUTH2_CLIENT_SECRET ="OAUTH2_CLIENT_SECRET";
+
+	public static final String OAUTH2_AUTHORIZATION_URI ="OAUTH2_AUTHORIZATION_URI";
+
+	public static final String OAUTH2_TOKEN_URI ="OAUTH2_TOKEN_URI";
+	
+	public static final String OAUTH2_USER_INFO_URI ="OAUTH2_USER_INFO_URI";
+	
+	
+	public static String GUEST_ROLE = "GUEST";
+	public static String SS_HEADER = "ss-header";
+	public static String USER_HEADER = "user";
+	public static String REQUEST_URI = "requestUri";
+	public static String CONTENT_TYPE_KEY = "content-type";
+	public static String CONTENT_TYPE_VALUE = "application/json";
+	public static String REQUEST_METHOD = "requestMethod";
 	
 	
 	public static final String SESSION_INFO ="sessionInfo";
@@ -116,7 +138,5 @@ public class Constants {
 	public static final String MOBILE_OTP_KEY ="MOBILE NUMBER VERIFICATION";
 	
 	public static final String OTP_TEMPLATE_ID ="OTP_TEMPLATE";
-	
-
 	
 }
