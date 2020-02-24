@@ -76,14 +76,12 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	ModuleConfigMappingRepository moduleConfigMappingRepo;
-	
-	
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private TokenProvider tokenProvider;
-    
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private TokenProvider tokenProvider;
 
 	@Override
 	public void deleteUser(Long userId) {
@@ -296,53 +294,57 @@ public class UserServiceImpl implements UserService {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 	@Override
 	public String setRedisSession(Long userId) {
-		
+
 		String session = UUID.randomUUID().toString();
-		
-		UsersProfileDto profile  = getProfile(userId);
-		//check
+
+		UsersProfileDto profile = getProfile(userId);
+		// check
 		if (!profile.equals(null)) {
 			try {
 				redisTemplate.opsForValue().set(session, objectMapper.writeValueAsString(profile));
 				if (properties.getSessionTimeout() > 0)
 					redisTemplate.expire(session, properties.getSessionTimeout(), TimeUnit.SECONDS);
-				//return
+				// return
 				return session;
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
 			}
 		}
-		//return
+		// return
 		return session;
 	}
 
 	@Override
 	public Boolean logout(String sessionId) {
-		/*
-		 * if(StringUtils.isNotEmpty(sessionId)) { if (!redisTemplate.delete(sessionId))
-		 * { log.error("Couldn't log  user out, sessionId: {}",sessionId); return false;
-		 * }else{ return true; } }
-		 */
+		if (!CustomUtil.isEmptyString(sessionId)) {
+			if (!redisTemplate.delete(sessionId)) {
+				log.error("Couldn't log  user out, sessionId: {}", sessionId);
+				return false;
+			} else {
+				return true;
+			}
+		}
+
 		return null;
 	}
 
 	@Override
-	public User registerNewUser(DecriptionUserResponseDto tokenUser,Long vendor) {
+	public User registerNewUser(DecriptionUserResponseDto tokenUser, Long vendor) {
 		User user = new User();
 
 		user.setParentUserId(vendor);
 		user.setUserGroupId(3L);
 		user.setProvider(AuthProvider.token);
 		user.setProviderId(tokenUser.getUniqueId());
-		user.setName(tokenUser.getFirstName() +" " +tokenUser.getLastName());
+		user.setName(tokenUser.getFirstName() + " " + tokenUser.getLastName());
 		user.setEmail(tokenUser.getEmail());
 		user.setFirstName(tokenUser.getFirstName());
 		user.setLastName(tokenUser.getLastName());
-		//Todo encrypt standard pass for each user
-		String tokenPass = tokenUser.getUniqueId();		
+		// Todo encrypt standard pass for each user
+		String tokenPass = tokenUser.getUniqueId();
 		user.setPassword(passwordEncoder.encode(tokenPass));
 		user.setImageUrl("");
 		user.setStatus(CommonStatus.ENABLED);
@@ -354,11 +356,11 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public User updateExistingUser(User existingUser, DecriptionUserResponseDto tokenUser) {		
+	public User updateExistingUser(User existingUser, DecriptionUserResponseDto tokenUser) {
 		existingUser.setProvider(AuthProvider.token);
 		existingUser.setUserGroupId(3L);
 		existingUser.setProviderId(tokenUser.getUniqueId());
-		existingUser.setName(tokenUser.getFirstName() +" " +tokenUser.getLastName());
+		existingUser.setName(tokenUser.getFirstName() + " " + tokenUser.getLastName());
 		existingUser.setEmail(tokenUser.getEmail());
 		existingUser.setFirstName(tokenUser.getFirstName());
 		existingUser.setLastName(tokenUser.getLastName());
