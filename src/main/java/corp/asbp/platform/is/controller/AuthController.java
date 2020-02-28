@@ -14,6 +14,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import corp.asbp.platform.is.dto.DecriptionUserResponseDto;
+import corp.asbp.platform.is.dto.GuestApi;
 import corp.asbp.platform.is.dto.ProcessDecryptionDto;
 import corp.asbp.platform.is.dto.UsersProfileDto;
 import corp.asbp.platform.is.enumerations.AuthProvider;
@@ -35,6 +36,7 @@ import corp.asbp.platform.is.security.TokenProvider;
 import corp.asbp.platform.is.security.UserPrincipal;
 import corp.asbp.platform.is.service.AuthorizationService;
 import corp.asbp.platform.is.service.DecryptionApiSettingsService;
+import corp.asbp.platform.is.service.RolesService;
 import corp.asbp.platform.is.service.UserService;
 import corp.asbp.platform.is.util.CustomUtil;
 
@@ -71,6 +73,9 @@ public class AuthController {
 
 	@Autowired
 	private AuthorizationService authorizationService;
+	
+	@Autowired
+	private RolesService rolesService;
 
 	@PostMapping("/login")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -179,6 +184,16 @@ public class AuthController {
 		UsersProfileDto user = authorizationService.validateUser(CustomUtil.getSsHeader(request),
 				CustomUtil.getRequestUri(request), CustomUtil.getRequestMethod(request));
 		return new GenericResponseDto<UsersProfileDto>(user, request);
+	}
+	
+	@GetMapping("/getUserFromSession")
+	public GenericResponseDto<UsersProfileDto> getUserFromSession(@RequestParam String sessionId, HttpServletRequest request) throws UnAuthorizedException, IOException {
+		return new GenericResponseDto.GenericResponseDtoBuilder<>(request, authorizationService.getUserFromSession(sessionId)).build();
+	}
+	
+	@GetMapping("/getGuestAllRoleApis")
+	public GenericResponseDto<GuestApi> getGuestAllRoleApis(HttpServletRequest request) throws UnAuthorizedException, IOException {
+		return new GenericResponseDto.GenericResponseDtoBuilder<>(request, rolesService.getGuestAllRoleApis()).build();
 	}
 
 }

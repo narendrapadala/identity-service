@@ -1,6 +1,7 @@
 package corp.asbp.platform.is.service.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.transaction.Transactional;
@@ -14,15 +15,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import corp.asbp.platform.is.dto.AssignRolesAndResponsibilitesDto;
+import corp.asbp.platform.is.dto.GuestApi;
 import corp.asbp.platform.is.dto.RoleAndResponsibilityMappingDto;
 import corp.asbp.platform.is.enumerations.CommonStatus;
 import corp.asbp.platform.is.exception.ASBPException;
+import corp.asbp.platform.is.model.ApiModuleFeatureMapping;
 import corp.asbp.platform.is.model.Client;
 import corp.asbp.platform.is.model.Module;
 import corp.asbp.platform.is.model.ModuleConfigMapping;
 import corp.asbp.platform.is.model.ModuleFeature;
 import corp.asbp.platform.is.model.Role;
 import corp.asbp.platform.is.model.RoleCategory;
+import corp.asbp.platform.is.repository.ApiModuleFeatureMappingRepository;
 import corp.asbp.platform.is.repository.ClientRepository;
 import corp.asbp.platform.is.repository.ModuleConfigMappingRepository;
 import corp.asbp.platform.is.repository.ModuleFeatureRepository;
@@ -30,8 +34,7 @@ import corp.asbp.platform.is.repository.ModuleRepository;
 import corp.asbp.platform.is.repository.RoleCategoryRepository;
 import corp.asbp.platform.is.repository.RoleRepository;
 import corp.asbp.platform.is.service.RolesService;
-
-
+import corp.asbp.platform.is.util.EnvironmentProperties;
 
 /**
  * @author Narendra
@@ -60,6 +63,12 @@ public class RoleServiceImpl implements RolesService {
 
 	@Autowired
 	private ModuleConfigMappingRepository moduleConfigMappingRepo;
+	
+	@Autowired
+	private ApiModuleFeatureMappingRepository apiModuleFeatureMappingRepo;
+	
+	@Autowired
+	private EnvironmentProperties properties;
 
 	@Override
 	public Role saveRole(Role api) throws ASBPException {
@@ -96,12 +105,12 @@ public class RoleServiceImpl implements RolesService {
 
 	@Override
 	public Page<Role> getAllRoles(String searchColumn, String searchValue, Pageable pageable) {
-		//if (StringUtils.isEmpty(searchColumn)) {
-			//return roleRepo.findAll(pageable);
-		//} else {
-			// Specification.where(getFilterQuery(searchColumn, searchValue)),
-			return roleRepo.findAll(pageable);
-		//}
+		// if (StringUtils.isEmpty(searchColumn)) {
+		// return roleRepo.findAll(pageable);
+		// } else {
+		// Specification.where(getFilterQuery(searchColumn, searchValue)),
+		return roleRepo.findAll(pageable);
+		// }
 	}
 
 	@Override
@@ -203,8 +212,8 @@ public class RoleServiceImpl implements RolesService {
 	@Override
 	public List<ModuleConfigMapping> addRolesAndResponsibilities(AssignRolesAndResponsibilitesDto assinRoles)
 			throws ASBPException {
-		
-		Long roleId = assinRoles.getRoleId() ;
+
+		Long roleId = assinRoles.getRoleId();
 		// check
 		if (roleId > 0) {
 			Role role = roleRepo.findById(assinRoles.getRoleId())
@@ -220,7 +229,7 @@ public class RoleServiceImpl implements RolesService {
 				// remove old roles and responsibilities
 				moduleConfigMappingRepo.deleteByIdRoleIdAndIdClientId(assinRoles.getRoleId(), assinRoles.getClientId());
 			}
-			List<ModuleConfigMapping> mcfList =  new ArrayList<>();
+			List<ModuleConfigMapping> mcfList = new ArrayList<>();
 			// check
 			if (assinRoles.getAssingRoles().size() > 0) {
 				// loop
@@ -229,7 +238,6 @@ public class RoleServiceImpl implements RolesService {
 
 					// check
 					if (assingRole.getModuleId() > 0) {
-						
 
 						Module module = moduleRepo.findFirstById(assingRole.getModuleId());
 						// check
@@ -242,37 +250,38 @@ public class RoleServiceImpl implements RolesService {
 
 								// loop
 								for (Long featureId : assingRole.getFeatureIds()) {
-									
-									//check
-									if(featureId > 0) {
-										//check
+
+									// check
+									if (featureId > 0) {
+										// check
 										ModuleFeature moduleFeature = moduleFeatureRepo.findFirstById(featureId);
-										//check
-										if(moduleFeature!=null) {
-											//set
+										// check
+										if (moduleFeature != null) {
+											// set
 											Role mRole = new Role();
 											mRole.setId(roleId);
-											//set
+											// set
 											Client mClient = new Client();
 											mClient.setId(assinRoles.getClientId());
-											//set
+											// set
 											ModuleFeature mFeature = new ModuleFeature();
 											mFeature.setId(featureId);
-											//set
+											// set
 											Module mModule = new Module();
 											mModule.setId(assingRole.getModuleId());
-											//set
+											// set
 											ModuleConfigMapping moduleConfigMapping = new ModuleConfigMapping();
 											moduleConfigMapping.setRole(mRole);
 											moduleConfigMapping.setClient(mClient);
 											moduleConfigMapping.setModule(mModule);
 											moduleConfigMapping.setModuleFeature(mFeature);
-											
-											ModuleConfigMapping mcmSave = moduleConfigMappingRepo.save(moduleConfigMapping);
-											//set
-											mcfList.add(mcmSave);											
+
+											ModuleConfigMapping mcmSave = moduleConfigMappingRepo
+													.save(moduleConfigMapping);
+											// set
+											mcfList.add(mcmSave);
 										}
-										
+
 									}
 								}
 
@@ -288,6 +297,77 @@ public class RoleServiceImpl implements RolesService {
 
 		}
 		return null;
+	}
+
+	@Override
+	public GuestApi getGuestAllRoleApis() {
+
+		//get guest role from properties
+		String guestRole = properties.getGuestRole();
+		
+		Role role = roleRepo.findFirstByName(guestRole);
+		
+		GuestApi gApi = new GuestApi();
+		
+		List<String> guestApis = new ArrayList<>();
+		
+		if (role != null) {
+			
+			List<ModuleConfigMapping> listMcm = moduleConfigMappingRepo.findByRoleIdIn(Arrays.asList(role.getId()));
+		
+			List<ModuleFeature> moduleFeature = new ArrayList<>();
+
+			
+			 
+			//check
+			if (listMcm != null) {
+				//check
+				for(ModuleConfigMapping mcm : listMcm ) {
+					//check
+					if(mcm!=null && mcm.getModuleFeature()!=null) {
+						//check
+						if(moduleFeature.size() > 0) {
+							//check
+							if(!moduleFeature.contains(mcm.getModuleFeature())){
+								moduleFeature.add(mcm.getModuleFeature());
+							}							
+						}else {
+							moduleFeature.add(mcm.getModuleFeature());
+						}
+					}
+				}
+				
+				
+				//feature
+				if(moduleFeature.size() > 0) {
+					 
+					List<ApiModuleFeatureMapping> apis =  apiModuleFeatureMappingRepo.findAllByModuleFeatureIn(moduleFeature);
+					 //check
+					 if(apis.size() > 0) {
+						//check
+							for(ApiModuleFeatureMapping api : apis ) {
+								//check
+								if(api!=null && api.getApi()!=null) {
+									//check
+									if(guestApis.size() > 0 ) {
+										//check
+										if(!guestApis.contains(api.getApi().getName())) {
+											guestApis.add(api.getApi().getName());
+										}
+									}else {
+										guestApis.add(api.getApi().getName());
+									}
+								}
+							}
+					 }
+				}				
+			}
+		}
+		
+		//set
+		gApi.setGuestApi(guestApis);
+		//return
+		return gApi;
 	}
 
 }

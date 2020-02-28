@@ -1,5 +1,6 @@
 package corp.asbp.platform.is.controller;
 
+import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,12 +24,14 @@ import corp.asbp.platform.is.dto.UserResponseDto;
 import corp.asbp.platform.is.dto.UsersProfileDto;
 
 import corp.asbp.platform.is.exception.OAuthResourceNotFoundException;
+import corp.asbp.platform.is.exception.UnAuthorizedException;
 import corp.asbp.platform.is.model.ModuleConfigMapping;
 import corp.asbp.platform.is.model.User;
 import corp.asbp.platform.is.payload.GenericResponseDto;
 import corp.asbp.platform.is.repository.UserRepository;
 import corp.asbp.platform.is.security.CurrentUser;
 import corp.asbp.platform.is.security.UserPrincipal;
+import corp.asbp.platform.is.service.AuthorizationService;
 import corp.asbp.platform.is.service.UserService;
 
 @RestController
@@ -36,6 +39,13 @@ import corp.asbp.platform.is.service.UserService;
 public class UserController {
 
 	private UserService userService;
+	
+	private  AuthorizationService authorizationService;
+
+	@Autowired
+	public void setAuthorizationService(AuthorizationService authorizationService) {
+		this.authorizationService = authorizationService;
+	}
 
 	@Autowired
 	public void setUserService(UserService userService) {
@@ -57,7 +67,8 @@ public class UserController {
         return userRepository.findById(1L)
                 .orElseThrow(() -> new OAuthResourceNotFoundException("User", "id",1L));
     }
-	@GetMapping("/all")
+	
+    @GetMapping("/all")
 	public GenericResponseDto<Page<User>> getAllUsers(@RequestParam(required = false) String searchColumn,
 			@RequestParam(required = false) String searchValue, @RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size, HttpServletRequest request) {
@@ -108,6 +119,18 @@ public class UserController {
 	@GetMapping("/logout")
 	public GenericResponseDto<Boolean> logout(@RequestParam String session, HttpServletRequest request) {
 		return new GenericResponseDto.GenericResponseDtoBuilder<>(request, userService.logout(session)).build();
+	}
+	
+	@GetMapping("/getUserFromSession")
+	public GenericResponseDto<UsersProfileDto> getUserFromSession(@RequestParam String sessionId, HttpServletRequest request) throws UnAuthorizedException, IOException {
+		return new GenericResponseDto.GenericResponseDtoBuilder<>(request, authorizationService.getUserFromSession(sessionId)).build();
+	}
+	
+    @GetMapping("/getUsersByParent")
+	public GenericResponseDto<Page<User>> getUsersByParent(@RequestParam(required = true) Long parent, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size, HttpServletRequest request) {
+		return new GenericResponseDto.GenericResponseDtoBuilder<>(request,
+				userService.getUsersByParent(parent,PageRequest.of(page, size))).build();
 	}
 
 }

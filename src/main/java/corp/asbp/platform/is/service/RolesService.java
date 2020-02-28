@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import corp.asbp.platform.is.dto.AssignRolesAndResponsibilitesDto;
+import corp.asbp.platform.is.dto.GuestApi;
 import corp.asbp.platform.is.dto.RoleAndResponsibilityMappingDto;
 import corp.asbp.platform.is.exception.ASBPException;
 import corp.asbp.platform.is.model.ModuleConfigMapping;
@@ -30,6 +31,8 @@ public interface RolesService {
 	void deleteRole(Long roleId);
 	
 	Role getRole(Long roleId);
+	
+	GuestApi getGuestAllRoleApis();
 
 	Page<Role> getAllRoles(String searchColumn, String searchValue, Pageable pageable);
 	

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import corp.asbp.platform.is.dto.AddUserRoleDto;
 import corp.asbp.platform.is.dto.DecriptionUserResponseDto;
+import corp.asbp.platform.is.dto.GuestApi;
 import corp.asbp.platform.is.dto.LoginDto;
 import corp.asbp.platform.is.dto.UserResponseDto;
 import corp.asbp.platform.is.dto.UsersProfileDto;
@@ -301,10 +302,18 @@ public class UserServiceImpl implements UserService {
 		String session = UUID.randomUUID().toString();
 
 		UsersProfileDto profile = getProfile(userId);
+		
+		GuestApi guestApi = rolesService.getGuestAllRoleApis();
+		
+
 		// check
 		if (!profile.equals(null)) {
 			try {
+				//set user object in cahe
 				redisTemplate.opsForValue().set(session, objectMapper.writeValueAsString(profile));
+				//set guest apis in cache
+				redisTemplate.opsForValue().set(session+"_guest", objectMapper.writeValueAsString(guestApi));
+				
 				if (properties.getSessionTimeout() > 0)
 					redisTemplate.expire(session, properties.getSessionTimeout(), TimeUnit.SECONDS);
 				// return
@@ -320,6 +329,11 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Boolean logout(String sessionId) {
 		if (!CustomUtil.isEmptyString(sessionId)) {
+			
+			//check
+			if (!redisTemplate.delete(sessionId+"_guest")) {
+				log.error("Couldn't clear  the guest apis from cache : {}", sessionId+"_guest");
+			}
 			if (!redisTemplate.delete(sessionId)) {
 				log.error("Couldn't log  user out, sessionId: {}", sessionId);
 				return false;
@@ -369,5 +383,11 @@ public class UserServiceImpl implements UserService {
 		existingUser.setModifiedAt(CustomUtil.currentTimeStamp());
 		existingUser.setModifiedBy(1L);
 		return userRepo.save(existingUser);
+	}
+
+	@Override
+	public Page<User> getUsersByParent(Long parentUserId, Pageable pageable) {
+		return userRepo.findAllByParentUserId(parentUserId,pageable);
+
 	}
 }

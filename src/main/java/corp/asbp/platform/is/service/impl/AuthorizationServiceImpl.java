@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import corp.asbp.platform.is.dto.GuestApi;
 import corp.asbp.platform.is.dto.SsHeader;
 import corp.asbp.platform.is.dto.UserResponseDto;
 import corp.asbp.platform.is.dto.UsersProfileDto;
@@ -34,9 +35,6 @@ import corp.asbp.platform.is.repository.ModuleConfigMappingRepository;
 import corp.asbp.platform.is.repository.UserRoleMappingRepository;
 import corp.asbp.platform.is.service.AuthorizationService;
 import corp.asbp.platform.is.util.CustomUtil;
-
-
-
 
 @Service
 @Transactional
@@ -72,18 +70,47 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
 		System.out.println(ssHeader);
 		System.out.println(uri);
-		
+
 		UsersProfileDto user = getUserFromSession(ssHeader.getSessionId());
 
 		UserResponseDto usr = new UserResponseDto();
-		
+
 		usr.setEmail(user.getUser().getEmail());
 		usr.setId(user.getUser().getId());
 		usr.setSessionId(ssHeader.getSessionId());
-		
+
 		Boolean b = getApiAccessRole(usr, uri, reqMethod);
 		// return
 		return user;
+	}
+
+	@Override
+	public GuestApi getGuestApisFromSession(String sessionId) {
+		
+		GuestApi guestApi = new GuestApi();
+		
+		if (!CustomUtil.isEmptyString(sessionId)) {
+
+			try {
+				String guest = redisTemplate.opsForValue().get(sessionId + "_guest");
+
+				if (guest != null) {
+					guestApi = mapper.readValue(guest, GuestApi.class);
+				}
+				// guest
+				if (guestApi != null && guestApi.getGuestApi().size() > 0) {
+					// loop
+					for (String api : guestApi.getGuestApi()) {
+						System.out.println("Guest API" + api);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		// return
+		return guestApi;
 	}
 
 	@Override
@@ -101,18 +128,25 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 				throw new UnAuthorizedException("Invalid session. Please relogin.");
 			}
 		}
-		return user; 
+		return user;
 	}
 
 	private Boolean getApiAccessRole(UserResponseDto userResponseDto, String requestUri, HttpMethod reqMethod)
 			throws ResourceNotFoundException, AccessForbiddenException {
 		LOGGER.info("Get api from repository...");
 
-		Api api = apiRepo.findFirstByNameAndType(requestUri,reqMethod );
-		
+		Api api = apiRepo.findFirstByNameAndType(requestUri, reqMethod);
+
 		if (api == null) {
 			LOGGER.error("This api doesn't exist: " + requestUri);
 			throw new ResourceNotFoundException("This api doesn't exist: " + requestUri);
+		}
+		
+		// get guest apis from session
+		GuestApi gApi = getGuestApisFromSession(userResponseDto.getSessionId());
+		//check the url available in guest apis
+		if(gApi.getGuestApi()!=null &&gApi.getGuestApi().size() > 0 &&  gApi.getGuestApi().contains(requestUri)) {
+			return true;
 		}
 
 		List<ApiModuleFeatureMapping> mf = apiModuleFeatureMappingRepo.findByApi(api);
@@ -141,13 +175,13 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 		List<Long> roleIds = new ArrayList<>();
 		// loop
 		for (ModuleConfigMapping mconf : mconfig) {
-			System.out.println("api role : "+mconf.toString());
+			System.out.println("api role : " + mconf.toString());
 			// check and remove duplicate
 			if (roleIds.size() == 0) {
 				roleIds.add(mconf.getId().getRoleId());
-				System.out.println("api role : "+mconf.getId().getRoleId());
+				System.out.println("api role : " + mconf.getId().getRoleId());
 			} else if (roleIds.size() > 0 && !roleIds.contains(mconf.getId().getRoleId())) {
-				System.out.println("api role : "+mconf.getId().getRoleId());
+				System.out.println("api role : " + mconf.getId().getRoleId());
 				roleIds.add(mconf.getId().getRoleId());
 			}
 		}
@@ -159,7 +193,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 			int flag = 0;
 			// loop
 			for (UserRoleMapping userRole : userRoles) {
-				System.out.println("user role : "+userRole.getId().getRoleId());
+				System.out.println("user role : " + userRole.getId().getRoleId());
 				// check
 				if (roleIds.size() > 0 && roleIds.contains(userRole.getId().getRoleId())) {
 					flag = 1;

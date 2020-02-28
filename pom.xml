@@ -89,6 +89,11 @@
 		</dependency>
 
 		<dependency>
+			<groupId>corp.asbp.platform</groupId>
+			<artifactId>security</artifactId>
+			<version>0.0.1</version>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>${lombak.version}</version>
@@ -100,7 +105,12 @@
 			<artifactId>okhttp</artifactId>
 			<version>2.7.5</version>
 		</dependency>
-		
+		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-devtools -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>

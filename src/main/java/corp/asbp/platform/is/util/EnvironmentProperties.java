@@ -31,5 +31,9 @@ public class EnvironmentProperties {
 	@Value("${asbp.redis.password:}")
 	private String redisPassword;
 	
+	@Value("${asbp.guest.role:GUEST}")
+	private String guestRole;
+
+	
 	
 }

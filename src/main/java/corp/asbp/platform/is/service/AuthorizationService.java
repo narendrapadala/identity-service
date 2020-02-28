@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import org.springframework.http.HttpMethod;
 
+import corp.asbp.platform.is.dto.GuestApi;
 import corp.asbp.platform.is.dto.SsHeader;
 import corp.asbp.platform.is.dto.UsersProfileDto;
 import corp.asbp.platform.is.exception.AccessForbiddenException;
@@ -26,5 +27,7 @@ public interface AuthorizationService {
 
 	
 	public UsersProfileDto getUserFromSession(String sessionId) throws UnAuthorizedException, IOException;
+	
+	public GuestApi getGuestApisFromSession(String sessionId);
 
 }

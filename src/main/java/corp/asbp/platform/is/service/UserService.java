@@ -35,6 +35,9 @@ public interface UserService {
 	void deleteUser(Long userId);
 
 	Page<User> getAllUsers(Pageable pageable);
+	
+	Page<User> getUsersByParent( Long parentUserId,Pageable pageable);
+
 
 	User getUser(Long userId);
 	
