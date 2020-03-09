@@ -38,6 +38,7 @@ import corp.asbp.platform.is.service.AuthorizationService;
 import corp.asbp.platform.is.service.DecryptionApiSettingsService;
 import corp.asbp.platform.is.service.RolesService;
 import corp.asbp.platform.is.service.UserService;
+import corp.asbp.platform.is.util.CustomCustomQueriesUtil;
 import corp.asbp.platform.is.util.CustomUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -53,6 +54,9 @@ import java.util.Optional;
 @RequestMapping("/auth")
 public class AuthController {
 
+	@Autowired
+	CustomCustomQueriesUtil cqu;
+	
 	@Autowired
 	private AuthenticationManager authenticationManager;
 
@@ -194,6 +198,13 @@ public class AuthController {
 	@GetMapping("/getGuestAllRoleApis")
 	public GenericResponseDto<GuestApi> getGuestAllRoleApis(HttpServletRequest request) throws UnAuthorizedException, IOException {
 		return new GenericResponseDto.GenericResponseDtoBuilder<>(request, rolesService.getGuestAllRoleApis()).build();
+	}
+	
+	@GetMapping("/test")
+	public GenericResponseDto<String> test(HttpServletRequest request) throws UnAuthorizedException, IOException {
+		
+		cqu.test();
+		return new GenericResponseDto.GenericResponseDtoBuilder<>(request,authorizationService.test()).build();
 	}
 
 }

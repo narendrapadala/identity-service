@@ -4,6 +4,7 @@ package corp.asbp.platform.is.model;
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQuery;
@@ -39,11 +40,11 @@ public class ApiModuleFeatureMapping {
 	@Column(name="modified_by")
 	private Long modifiedBy;
 	
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="api_id",insertable=false,updatable=false)
 	private Api api;
 	
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="module_feature_id",insertable=false,updatable=false)
 	private ModuleFeature moduleFeature;
 	

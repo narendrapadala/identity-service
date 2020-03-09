@@ -11,6 +11,7 @@ import javax.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ import corp.asbp.platform.is.repository.ApiRepository;
 import corp.asbp.platform.is.repository.ModuleConfigMappingRepository;
 import corp.asbp.platform.is.repository.UserRoleMappingRepository;
 import corp.asbp.platform.is.service.AuthorizationService;
+import corp.asbp.platform.is.service.RolesService;
 import corp.asbp.platform.is.util.CustomUtil;
 
 @Service
@@ -59,10 +61,43 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
 	private ObjectMapper mapper = new ObjectMapper();
 
+	@Autowired
+	private RolesService rolesService;
+
 	@Override
 	public UsersProfileDto validateUser(SsHeader ssHeader, String uri, HttpMethod reqMethod)
 			throws AccessForbiddenException, UnAuthorizedException, ResourceNotFoundException, IOException,
 			ClientVersionUpgradeException {
+		UserResponseDto usr = new UserResponseDto();
+		try {
+
+			GuestApi guestApi;
+
+			String guest = redisTemplate.opsForValue().get("guest_apis");
+
+			if (guest != null) {
+				guestApi = mapper.readValue(guest, GuestApi.class);
+			} else {
+				//update
+				guestApi = rolesService.getGuestAllRoleApis();
+				redisTemplate.opsForValue().set("guest_apis", mapper.writeValueAsString(guestApi));
+			}
+
+			// guest
+			if (guestApi != null && guestApi.getGuestApi().size() > 0) {
+				// loop
+				for (String api : guestApi.getGuestApi()) {
+					System.out.println("Guest API" + api);
+				}
+			}
+			
+			if (guestApi.getGuestApi() != null && guestApi.getGuestApi().size() > 0 && guestApi.getGuestApi().contains(uri)) {				
+				//return
+				return null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		LOGGER.info("Got request to validate user: " + ssHeader);
 		LOGGER.info("api to validate: " + uri);
@@ -72,9 +107,6 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 		System.out.println(uri);
 
 		UsersProfileDto user = getUserFromSession(ssHeader.getSessionId());
-
-		UserResponseDto usr = new UserResponseDto();
-
 		usr.setEmail(user.getUser().getEmail());
 		usr.setId(user.getUser().getId());
 		usr.setSessionId(ssHeader.getSessionId());
@@ -86,9 +118,9 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
 	@Override
 	public GuestApi getGuestApisFromSession(String sessionId) {
-		
+
 		GuestApi guestApi = new GuestApi();
-		
+
 		if (!CustomUtil.isEmptyString(sessionId)) {
 
 			try {
@@ -141,11 +173,11 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 			LOGGER.error("This api doesn't exist: " + requestUri);
 			throw new ResourceNotFoundException("This api doesn't exist: " + requestUri);
 		}
-		
+
 		// get guest apis from session
 		GuestApi gApi = getGuestApisFromSession(userResponseDto.getSessionId());
-		//check the url available in guest apis
-		if(gApi.getGuestApi()!=null &&gApi.getGuestApi().size() > 0 &&  gApi.getGuestApi().contains(requestUri)) {
+		// check the url available in guest apis
+		if (gApi.getGuestApi() != null && gApi.getGuestApi().size() > 0 && gApi.getGuestApi().contains(requestUri)) {
 			return true;
 		}
 
@@ -212,6 +244,17 @@ public class AuthorizationServiceImpl implements AuthorizationService {
 
 		}
 
+	}
+
+	@Override
+	public String test() {
+		return demo();
+	}
+
+	@Cacheable("test")
+	public String demo() {
+		System.out.println("Test serivce");
+		return "Narendra Test";
 	}
 
 }

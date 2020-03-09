@@ -29,5 +29,7 @@ public interface AuthorizationService {
 	public UsersProfileDto getUserFromSession(String sessionId) throws UnAuthorizedException, IOException;
 	
 	public GuestApi getGuestApisFromSession(String sessionId);
+	
+	public String test();
 
 }
