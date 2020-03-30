@@ -143,11 +143,13 @@ public class AuthController {
 		// check
 		if (userOptional.isPresent()) {
 			user = userOptional.get();
-			if (!user.getProvider().equals("token")) {
+			/*	
+		 	if (!user.getProvider().equals("token")) {
 				throw new OAuth2AuthenticationProcessingException(
 						"Looks like you're signed up with " + user.getProvider() + " account. Please use your "
 								+ user.getProvider() + " account to login.");
 			}
+			*/
 			//vendor id is parent id
 			user.setParentUserId(vendor);
 			user = userService.updateExistingUser(user, tokenUser);

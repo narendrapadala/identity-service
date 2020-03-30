@@ -35,4 +35,15 @@ public class FacebookOAuth2UserInfo extends OAuth2UserInfo {
         }
         return null;
     }
+    
+    //ToDo find and change the exact first and last name matching attribute on the map and implement as needed
+    @Override
+    public String getFirstName() {
+        return (String) attributes.get("name");
+    }
+    
+    @Override
+    public String getLastName() {
+        return (String) attributes.get("name");
+    }
 }
